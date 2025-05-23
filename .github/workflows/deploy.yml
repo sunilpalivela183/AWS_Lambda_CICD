@@ -17,6 +17,8 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
+        sudo add-apt-repository -y ppa:deadsnakes/ppa
+        sudo apt-get update
         sudo apt-get install -y python3.11 python3.11-venv python3-pip jq zip
         pip3 install boto3
 
@@ -65,7 +67,7 @@ jobs:
           aws lambda create-function \
             --function-name $FUNCTION_NAME \
             --runtime python3.11 \
-            --role arn:aws:iam::851725469799:role/service-role/test_function-role-k06sk5ka \
+            --role arn:aws:iam::356838091771:role/service-role/first-lambda-function-role-e499l5dx\
             --handler app.lambda_handler \
             --timeout 300 \
             --zip-file fileb://lambda.zip \
