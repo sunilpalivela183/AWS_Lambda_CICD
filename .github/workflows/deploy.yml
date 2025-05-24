@@ -22,18 +22,7 @@ jobs:
         sudo apt-get install -y python3.11 python3.11-venv python3-pip jq zip
         pip3 install boto3
 
-    - name: Set environment variables
-      id: set-env-vars
-      run: |
-        if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "ENV=prod" >> $GITHUB_ENV
-          echo "API_KEY=prod_api_key" >> $GITHUB_ENV
-          echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
-        else
-          echo "ENV=test" >> $GITHUB_ENV
-          echo "API_KEY=test_api_key" >> $GITHUB_ENV
-          echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
-        fi
+    
 
     - name: Package Lambda Function
       run: |
@@ -60,7 +49,6 @@ jobs:
         # Check if the Lambda function exists
         FUNCTION_EXISTS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION || echo "false")
 
-        ENV_VARS="Variables={ENV=${{ env.ENV }},API_KEY=${{ env.API_KEY }},LOG_LEVEL=${{ env.LOG_LEVEL }}}"
 
         if [ "$FUNCTION_EXISTS" == "false" ]; then
           echo "Creating Lambda function $FUNCTION_NAME..."
@@ -100,5 +88,4 @@ jobs:
           aws lambda update-function-configuration \
             --function-name $FUNCTION_NAME \
             --region $REGION \
-            --environment "$ENV_VARS"
         fi
