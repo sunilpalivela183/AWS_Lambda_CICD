@@ -19,6 +19,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3.11 python3.11-venv python3-pip jq zip
         pip3 install boto3
+    - name: Install dependenciesdeadsnakes/ppa
+        sudo apt-get update
+        sudo apt
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        -get install -y python3.11 python3.11-venv python3-p    sudo add-apt-repository ppa:deadsnakes/ppa
+        sudoip jq zip
+        pip3 install boto3
 
     - name: Set environment variables
       id: set-env-vars
