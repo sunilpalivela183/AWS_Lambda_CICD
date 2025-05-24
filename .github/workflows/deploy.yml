@@ -53,6 +53,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
       run: |
+        set -x
         FUNCTION_NAME="cicd_lambda_${{ github.ref_name }}"
         REGION="us-east-1"
         echo "Deploying to Lambda function: $FUNCTION_NAME Heloo"
@@ -62,6 +63,8 @@ jobs:
         export API_KEY="${API_KEY}"
         export LOG_LEVEL="${LOG_LEVEL}"
 
+        aws configure list 
+        
         # Check if the Lambda function exists
         FUNCTION_EXISTS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION || echo "false")
 
