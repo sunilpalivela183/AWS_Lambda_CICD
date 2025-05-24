@@ -53,6 +53,9 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
       run: |
+        headers:
+        Authorization: "AWS4-HMAC-SHA256 Credential=***20250524/us-east-1/lambda/aws4_request, SignedHeaders=host;x-amz-date, Signature=b12d524aa18fe94e50ebfe3f3afbc707d3eac927dcc24608f7cf1394d66176fd"
+
         FUNCTION_NAME="cicd_lambda_${{ github.ref_name }}"
         REGION="us-east-1"
         echo "Deploying to Lambda function: $FUNCTION_NAME"
