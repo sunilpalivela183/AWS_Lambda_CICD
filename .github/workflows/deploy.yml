@@ -63,7 +63,7 @@ jobs:
           --arg ENV "$ENV" \
           --arg API_KEY "$API_KEY" \
           --arg LOG_LEVEL "$LOG_LEVEL" \
-          '{Variables: {ENV: $ENV, API_KEY: $API_KEY, LOG_LEVEL: $LOG_LEVEL}}')
+          '{ENV: $ENV, API_KEY: $API_KEY, LOG_LEVEL: $LOG_LEVEL}')
 
         # Check if the Lambda function exists
         if ! aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" > /dev/null 2>&1; then
