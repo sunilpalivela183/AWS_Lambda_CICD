@@ -22,7 +22,18 @@ jobs:
         sudo apt-get install -y python3.11 python3.11-venv python3-pip jq zip
         pip3 install boto3
 
-    
+    - name: Set environment variables
+      id: set-env-vars
+      run: |
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "ENV=prod" >> $GITHUB_ENV
+          echo "API_KEY=prod_api_key" >> $GITHUB_ENV
+          echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
+        else
+          echo "ENV=test" >> $GITHUB_ENV
+          echo "API_KEY=test_api_key" >> $GITHUB_ENV
+          echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+        fi
 
     - name: Package Lambda Function
       run: |
@@ -36,22 +47,28 @@ jobs:
         zip -r ../../lambda.zip .
         cd ../..
 
-    - name: Deploy to AWS Lambda
+    - name: Deploy to AWS to Lambda
       env:
-        AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
       run: |
         FUNCTION_NAME="cicd_lambda_${{ github.ref_name }}"
         REGION="us-east-1"
         echo "Deploying to Lambda function: $FUNCTION_NAME Heloo"
 
+        # Export environment variables for shell access
+        export ENV="${ENV}"
+        export API_KEY="${API_KEY}"
+        export LOG_LEVEL="${LOG_LEVEL}"
+
         # Check if the Lambda function exists
         FUNCTION_EXISTS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION || echo "false")
 
+        ENV_VARS="Variables={ENV=$ENV,API_KEY=$API_KEY,LOG_LEVEL=$LOG_LEVEL}"
 
         if [ "$FUNCTION_EXISTS" == "false" ]; then
-          echo "Creating Lambda function $FUNCTION_NAME..."
+          echo "Creating Lambda function $FUNCTION_NAME...1"
           aws lambda create-function \
             --function-name $FUNCTION_NAME \
             --runtime python3.11 \
@@ -60,6 +77,7 @@ jobs:
             --timeout 300 \
             --zip-file fileb://lambda.zip \
             --region $REGION \
+            --environment "$ENV_VARS"
         else
           echo "Updating Lambda function $FUNCTION_NAME..."
           aws lambda update-function-code \
@@ -87,4 +105,5 @@ jobs:
           aws lambda update-function-configuration \
             --function-name $FUNCTION_NAME \
             --region $REGION \
+            --environment "$ENV_VARS"
         fi
