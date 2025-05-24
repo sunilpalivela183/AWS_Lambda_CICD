@@ -20,7 +20,8 @@ jobs:
         sudo add-apt-repository -y ppa:deadsnakes/ppa
         sudo apt-get update
         sudo apt-get install -y python3.11 python3.11-venv python3-pip jq zip
-        pip3 install boto3
+        pip3 install boto3 --upgrade
+        pip3 install --upgrade awscli
 
     - name: Set environment variables
       id: set-env-vars
@@ -55,35 +56,37 @@ jobs:
       run: |
         FUNCTION_NAME="cicd_lambda_${{ github.ref_name }}"
         REGION="us-east-1"
-        echo "Deploying to Lambda function: $FUNCTION_NAME"
+        source $GITHUB_ENV
+
+        # Safely construct environment variables JSON
+        ENV_VARS=$(jq -n \
+          --arg ENV "$ENV" \
+          --arg API_KEY "$API_KEY" \
+          --arg LOG_LEVEL "$LOG_LEVEL" \
+          '{Variables: {ENV: $ENV, API_KEY: $API_KEY, LOG_LEVEL: $LOG_LEVEL}}')
 
         # Check if the Lambda function exists
-        FUNCTION_EXISTS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION || echo "false")
-
-        ENV_VARS="Variables={ENV=${{ env.ENV }},API_KEY=${{ env.API_KEY }},LOG_LEVEL=${{ env.LOG_LEVEL }}}"
-
-        if [ "$FUNCTION_EXISTS" == "false" ]; then
+        if ! aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" > /dev/null 2>&1; then
           echo "Creating Lambda function $FUNCTION_NAME..."
           aws lambda create-function \
-            --function-name $FUNCTION_NAME \
+            --function-name "$FUNCTION_NAME" \
             --runtime python3.11 \
             --role arn:aws:iam::356838091771:role/service-role/first-lambda-function-role-e499l5dx \
             --handler app.lambda_handler \
             --timeout 300 \
             --zip-file fileb://lambda.zip \
-            --region $REGION \
+            --region "$REGION" \
             --environment "$ENV_VARS"
         else
           echo "Updating Lambda function $FUNCTION_NAME..."
           aws lambda update-function-code \
-            --function-name $FUNCTION_NAME \
-            --region $REGION \
+            --function-name "$FUNCTION_NAME" \
+            --region "$REGION" \
             --zip-file fileb://lambda.zip
 
-          # Wait for function code update to complete
           echo "Waiting for function code update to complete..."
           while true; do
-            UPDATE_STATUS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION --query 'Configuration.LastUpdateStatus' --output text)
+            UPDATE_STATUS=$(aws lambda get-function --function-name "$FUNCTION_NAME" --region "$REGION" --query 'Configuration.LastUpdateStatus' --output text)
             if [ "$UPDATE_STATUS" == "Successful" ]; then
               echo "Function code update completed successfully."
               break
@@ -96,9 +99,8 @@ jobs:
             fi
           done
 
-          # Update function configuration
           aws lambda update-function-configuration \
-            --function-name $FUNCTION_NAME \
-            --region $REGION \
+            --function-name "$FUNCTION_NAME" \
+            --region "$REGION" \
             --environment "$ENV_VARS"
         fi
