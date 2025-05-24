@@ -64,7 +64,7 @@ jobs:
         export LOG_LEVEL="${LOG_LEVEL}"
 
         aws configure list 
-        
+
         # Check if the Lambda function exists
         FUNCTION_EXISTS=$(aws lambda get-function --function-name $FUNCTION_NAME --region $REGION || echo "false")
 
@@ -88,6 +88,7 @@ jobs:
             --region $REGION \
             --zip-file fileb://lambda.zip
 
+            
           # Wait for function code update to complete
           echo "Waiting for function code update to complete..."
           while true; do
